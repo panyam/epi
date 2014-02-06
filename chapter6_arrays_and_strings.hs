@@ -106,6 +106,47 @@ zero_mod_n_subset xs = zero_mod_n_subset' 0 index_table (mod_till_k xs)
             | index_table!x /= -1 = (index_table!x,i)
             | otherwise = zero_mod_n_subset' (i + 1) (index_table // [(toInteger x,toInteger i)]) xs
 
+-- EPI 6.6 - Longest contiguious increasing sub array
+longest_contig_inc_subarray :: (Ord a) => [a] -> (Int, Int)
+longest_contig_inc_subarray [] = (-1, -1)
+longest_contig_inc_subarray (x:xs) = longest_contig_inc_subarray' (0, x, 0, x) xs
+    where
+    longest_contig_inc_subarray' (i,ai,j,aj) [] = (i,j)
+    longest_contig_inc_subarray' (i,ai,j,aj) (x:xs) 
+            | x >= aj = longest_contig_inc_subarray' (i,ai,j + 1,x) xs
+            | otherwise = longest_contig_inc_subarray' (j + 1,x,j + 1,x) xs
+
+lcisa :: (Ord a) => [a] -> (Int, Int)
+lcisa [] = (-1,-1)
+lcisa xs = lcisa' (0,1) 0 xs
+    where 
+        lcisa' (start,maxlen) i [] = (start,maxlen)
+        lcisa' (start,maxlen) i xs
+            | nextlen > maxlen = lcisa' nextbest
+                                    (i + maxlen + inc_prefix)
+                                    (drop inc_prefix rest)
+            | otherwise = lcisa' (start,maxlen) (i + maxlen) rest
+            where
+                first_l = take maxlen xs
+                rest = drop maxlen xs
+                dec_prefix = largest_dec_prefix (reverse first_l)
+                inc_prefix = largest_inc_prefix rest
+                nextlen = inc_prefix + dec_prefix
+                nextbest = (i + maxlen - dec_prefix, nextlen) 
+
+largest_inc_prefix [] = 0
+largest_inc_prefix (x:[]) = 1
+largest_inc_prefix (x:y:xs)
+        | x <= y = 1 + largest_inc_prefix (y:xs)
+        | otherwise = 1
+
+largest_dec_prefix [] = 0
+largest_dec_prefix (x:[]) = 1
+largest_dec_prefix (x:y:xs)
+        | x >= y = 1 + largest_dec_prefix (y:xs)
+        | otherwise = 1
+
+
 -- EPI 6.19 - Reverse words in a string
 reverse_words :: [Char] -> [Char]
 reverse_words [] = []
