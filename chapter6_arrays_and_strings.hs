@@ -6,6 +6,21 @@ import Data.Char
 import qualified Data.Set as Set  
 import Data.Array
 
+greatest_common_divisor x 0 = x
+greatest_common_divisor 0 y = y
+greatest_common_divisor x y
+    | x_is_even && y_is_even = 2 * greatest_common_divisor (div x 2) (div y 2)
+    | x_is_odd && y_is_even = greatest_common_divisor x (div y 2)
+    | x_is_even && y_is_odd = greatest_common_divisor (div x 2) y
+    | x < y = greatest_common_divisor x (y - x)
+    | x > y = greatest_common_divisor (x - y) x
+    | otherwise = x
+    where
+        x_is_even = (mod x 2) == 0
+        y_is_even = (mod y 2) == 0
+        x_is_odd = not x_is_even
+        y_is_odd = not y_is_even
+
 arrayFromList input startIndex = array bounds [(i + startIndex, x) | (i,x) <- (zip indexes input)]
             where
                 bounds = (startIndex, startIndex + (length input) - 1)
@@ -146,6 +161,38 @@ largest_dec_prefix (x:y:xs)
         | x >= y = 1 + largest_dec_prefix (y:xs)
         | otherwise = 1
 
+
+-- EPI 6.9 - Big Integer multiplication
+bigint_multiply :: [Char] -> [Char] -> [Char]
+bigint_multiply ('-':xs) ('-':ys) = bigint_multiply xs ys
+bigint_multiply ('-':xs) (y:ys) = '-' : (bigint_multiply xs (y:ys))
+bigint_multiply (x:xs) ('-':ys) = '-' : (bigint_multiply (x:xs) ys)
+bigint_multiply xs ys = ""
+
+
+-- EPI 6.10 - Rotate an array
+n_rotations xs start size n = elems (n_rotations' (arrayFromList xs 0) start (xs!!start) size n)
+    where
+        len = length xs
+        n_rotations' arr curr_index curr_value size nleft 
+            | curr_index < 0 || size <= 0 || nleft <= 0 = arr
+            | otherwise = n_rotations' (arr // [(next_index, curr_value)]) next_index next_value size (nleft - 1)
+            where
+                next_index = mod (curr_index + size) len
+                next_value = arr!next_index
+
+
+rotate_array xs n = rotate_array' xs 0
+    where 
+        lxs = length xs
+        n' = mod n lxs
+        gcd_lxs_n = greatest_common_divisor lxs n'
+        numtimes = div lxs gcd_lxs_n
+        rotate_array' xs start_index
+            | start_index >= gcd_lxs_n = xs
+            | otherwise = n_rotations ys (n' - (start_index + 1)) n' numtimes
+            where
+                ys = rotate_array' xs (start_index + 1)
 
 -- EPI 6.19 - Reverse words in a string
 reverse_words :: [Char] -> [Char]
