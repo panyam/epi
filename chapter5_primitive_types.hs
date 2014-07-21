@@ -134,15 +134,15 @@ elias_decode = elias_decode_helper 0
 greatest_common_divisor x 0 = x
 greatest_common_divisor 0 y = y
 greatest_common_divisor x y
-    | x_is_even && y_is_even = 2 * greatest_common_divisor (div x 2) (div y 2)
-    | x_is_odd && y_is_even = greatest_common_divisor x (div y 2)
-    | x_is_even && y_is_odd = greatest_common_divisor (div x 2) y
+    | x_is_even && y_is_even = 2 * greatest_common_divisor (x `shiftR` 1) (y `shiftR` 1)
+    | x_is_odd && y_is_even = greatest_common_divisor x (y `shiftR` 1)
+    | x_is_even && y_is_odd = greatest_common_divisor (x `shiftR` 1) y
     | x < y = greatest_common_divisor x (y - x)
     | x > y = greatest_common_divisor (x - y) x
     | otherwise = x
     where
-        x_is_even = (mod x 2) == 0
-        y_is_even = (mod y 2) == 0
+        x_is_even = (x .&. 1) == 0
+        y_is_even = (y .&. 1) == 0
         x_is_odd = not x_is_even
         y_is_odd = not y_is_even
 

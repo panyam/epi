@@ -170,29 +170,94 @@ bigint_multiply (x:xs) ('-':ys) = '-' : (bigint_multiply (x:xs) ys)
 bigint_multiply xs ys = ""
 
 
--- EPI 6.10 - Rotate an array
-n_rotations xs start size n = elems (n_rotations' (arrayFromList xs 0) start (xs!!start) size n)
+-- EPI 6.13 - Rotate an array
+rotate_array xs j = rotate_array' xs 0
+    where 
+        lxs = length xs
+        j' = mod j lxs
+        gcd_lxs_j = greatest_common_divisor lxs j'
+        numtimes = div lxs gcd_lxs_j
+        rotate_array' xs start_index
+            | start_index >= gcd_lxs_j = xs
+            | otherwise = m_rotations ys (j' - (start_index + 1)) j' numtimes
+            where
+                ys = rotate_array' xs (start_index + 1)
+
+-- Performs "n" jumps of "size" each starting from a given index, wrapping around if necessary.
+-- For example if A = [1,2,3,4,5,6,7,8,9,10], 
+--    m_rotations A 0 3 3 would cause the following jumps:
+--          1 -> 4 -> 7, with A being:
+--    [1, 2, 3, 1, 5, 6, 4, 8, 9, 10]
+m_rotations xs index size m = elems (m_rotations' (arrayFromList xs 0) index (xs!!index) size m)
     where
         len = length xs
-        n_rotations' arr curr_index curr_value size nleft 
-            | curr_index < 0 || size <= 0 || nleft <= 0 = arr
-            | otherwise = n_rotations' (arr // [(next_index, curr_value)]) next_index next_value size (nleft - 1)
+        m_rotations' arr curr_index curr_value size numleft 
+            | curr_index < 0 || size <= 0 || numleft <= 0 = arr
+            | otherwise = m_rotations' (arr // [(next_index, curr_value)]) next_index next_value size (numleft - 1)
             where
                 next_index = mod (curr_index + size) len
                 next_value = arr!next_index
 
+-- EPI 6.13 - A simpler algorithm that is similar to the reversal of words in a sentence
+rotate_array_simple xs j = reverse (take j rxs) ++ reverse (drop j rxs) 
+        where rxs = reverse xs
 
-rotate_array xs n = rotate_array' xs 0
-    where 
-        lxs = length xs
-        n' = mod n lxs
-        gcd_lxs_n = greatest_common_divisor lxs n'
-        numtimes = div lxs gcd_lxs_n
-        rotate_array' xs start_index
-            | start_index >= gcd_lxs_n = xs
-            | otherwise = n_rotations ys (n' - (start_index + 1)) n' numtimes
-            where
-                ys = rotate_array' xs (start_index + 1)
+-- EPI 6.14 - Sudoku Checker
+zero_matrix cols rows = array ((0,0), (cols - 1,rows - 1)) [((i,j), 0) | i <- [0..cols - 1], j <- [0..rows - 1]]
+
+-- EPI 6.15 - Print an array spirally
+data Direction = North | East | South | West
+clockwise_of North = East
+clockwise_of East = South
+clockwise_of South = West
+clockwise_of West = North
+vector_of North = (0, -1)
+vector_of South = (0, 1)
+vector_of East = (1, 0)
+vector_of West = (-1, 0)
+primary_coord North = 1
+primary_coord South = 1
+primary_coord East = 0
+primary_coord West = 0
+
+next_pt dir (x,y) = ((x + fst (vector_of dir)),(y + snd (vector_of dir)))
+prev_pt dir (x,y) = ((x - fst (vector_of dir)),(y - snd (vector_of dir)))
+print_spirally width height = print_spirally' East (0,0) 0 [width, height]
+    where
+        print_spirally' dir (x,y) t [w,h]
+            | w == 0 || h == 0 = []
+            | t < [w,h] !! curr_coord = (y * width + x + 1) : print_spirally' dir (next_pt dir (x,y)) (t+1) [w,h]
+            | otherwise = print_spirally' next_dir (next_pt next_dir (prev_pt dir (x,y))) 0 [next_w,next_h]
+            where 
+                curr_coord = primary_coord dir
+                dir_vector = vector_of dir
+                next_dir = clockwise_of dir
+                next_dir_vector = vector_of next_dir
+                next_w = w - (abs (fst next_dir_vector))
+                next_h = h - (abs (snd next_dir_vector))
+
+-- row_in_matrix :: Array Int Int -> [Int]
+-- row_in_matrix matrix row = []
+
+-- EPI 6.18 - Runlength encoding
+run_length_encode :: [Char] -> [Char]
+run_length_encode xs = run_length_encode' 0 '\0' xs
+    where
+        run_length_encode' 0 _ [] = []
+        run_length_encode' 0 _ (x:xs) = run_length_encode' 1 x xs
+        run_length_encode' count curr_ch [] = (show count) ++ [curr_ch]
+        run_length_encode' count curr_ch (x:xs)
+            | curr_ch == x = run_length_encode' (count + 1) curr_ch xs
+            | otherwise = (show count) ++ [curr_ch] ++ run_length_encode' 1 x xs
+
+run_length_decode :: [Char] -> [Char]
+run_length_decode xs = run_length_decode' 0 xs
+    where
+        run_length_decode' _ [] = []
+        run_length_decode' count (x:xs)
+            | isDigit x = run_length_decode' ((count * 10) + (digitToInt x)) xs
+            | otherwise = (replicate count x) ++ run_length_decode' 0 xs
+            
 
 -- EPI 6.19 - Reverse words in a string
 reverse_words :: [Char] -> [Char]
